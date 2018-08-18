@@ -5,9 +5,6 @@ from difflib import SequenceMatcher
 from urllib import parse
 import settings
 
-# TODO remove attributes from POST request until it breaks
-# TODO deploy on HTPC
-
 HOST_NAME = settings.server_settings['host']
 PORT = settings.server_settings['port']
 BASE_URL = f'http://{HOST_NAME}:{PORT}'
@@ -157,7 +154,7 @@ def set_recording(episode_elem, year):
         'type':'4',
         'X-Plex-Product': 'Plex Web',
         'X-Plex-Version': '3.59.1',
-        'X-Plex-Client-Identifier': 'hefuoii43m3jdvyatfk6jej2',
+        'X-Plex-Client-Identifier': settings.server_settings['client_identifier'],
         'X-Plex-Platform': 'Chrome',
         'X-Plex-Platform-Version': '67.0',
         'X-Plex-Sync-Version': '2',
