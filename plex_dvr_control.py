@@ -26,7 +26,8 @@ def update_db_from_plex():
     cursor = conn.cursor()
     all_shows = []
     for show in cursor.execute('SELECT plex_key, id FROM shows'):
-        r = requests.get(f'{BASE_URL}/library/metadata/{show["plex_key"]}/children/', params=parameters)
+        r = requests.get(
+            f'{BASE_URL}/library/metadata/{show["plex_key"]}/children/', params=parameters)
         seasons_root = ET.fromstring(r.text)
         for season in seasons_root:
             if 'type' in season.attrib.keys() and season.attrib['type'] == 'season':
@@ -50,7 +51,8 @@ def update_db_from_plex():
     db_removals = list(set(db_episodes) - set(plex_episodes))
     q = [(x,) for x in db_removals]
     if len(db_removals) > 0:
-        cursor.executemany('DELETE FROM episodes WHERE episode_plex_key=(?)', q)
+        cursor.executemany(
+            'DELETE FROM episodes WHERE episode_plex_key=(?)', q)
         conn.commit()
 
 
@@ -74,8 +76,9 @@ def check_guide_for_missing_episodes():
     shows = list(cursor.execute('SELECT gracenote_id, id FROM shows'))
     for show in shows:
         episodes_in_db = list(cursor.execute('SELECT season, episode, name, episode_gracenote_id, id FROM episodes '
-                                             'WHERE show_id=(?)',(show['id'],)))
-        show_encoded_url = parse.quote(f'com.gracenote.onconnect://show/{show["gracenote_id"]}', safe='')
+                                             'WHERE show_id=(?)', (show['id'],)))
+        show_encoded_url = parse.quote(
+            f'com.gracenote.onconnect://show/{show["gracenote_id"]}', safe='')
         r = requests.get(f'{BASE_URL}/tv.plex.providers.epg.onconnect:2'
                          f'/metadata/{show_encoded_url}/children/',
                          params=parameters)
@@ -97,10 +100,12 @@ def check_guide_for_missing_episodes():
                                 and SequenceMatcher(None, d['name'], episode.attrib['title']).ratio() > 0.70:
                             in_db = True
                     if not in_db and episode.attrib['guid'] not in guids:
-                        set_recording(episode, seasons_root.attrib['parentYear'])
+                        set_recording(
+                            episode, seasons_root.attrib['parentYear'])
                     if in_db:
                         if not d['episode_gracenote_id']:
-                            cursor.execute('UPDATE episodes SET episode_gracenote_id=(?) WHERE id=(?)', (int(episode.attrib['guid'][-12:]), d['id']))
+                            cursor.execute('UPDATE episodes SET episode_gracenote_id=(?) WHERE id=(?)', (int(
+                                episode.attrib['guid'][-12:]), d['id']))
                             conn.commit()
                             print('Updated gracenote id.')
                         print(f'Skipped {episode.attrib["title"]}, {episode.attrib["grandparentTitle"]}'
@@ -148,10 +153,10 @@ def set_recording(episode_elem, year):
         'params[airingChannels]': parse.quote(episode_elem[0].attrib['channelIdentifier']+'='+episode_elem[0].attrib['channelTitle']),
         'params[airingTimes]': int(
             ((int(episode_elem.attrib['originallyAvailableAt'][11:13]) + 8) +
-            int(episode_elem.attrib['originallyAvailableAt'][14:16]) / 60) * 60) % 1440,
+             int(episode_elem.attrib['originallyAvailableAt'][14:16]) / 60) * 60) % 1440,
         'params[libraryType]': '2',
         'params[mediaProviderID]': '3',
-        'type':'4',
+        'type': '4',
         'X-Plex-Product': 'Plex Web',
         'X-Plex-Version': '3.59.1',
         'X-Plex-Client-Identifier': settings.server_settings['client_identifier'],
@@ -170,9 +175,12 @@ def set_recording(episode_elem, year):
 
     url = f'{base_url}?{parameters}'
     p = requests.post(url)
-    print(f'Added recording: {episode_elem.attrib["grandparentTitle"]} - '
-          f'{episode_elem.attrib["parentIndex"]}x{episode_elem.attrib["index"]} - '
-          f'{episode_elem.attrib["title"]}')
+    if p.ok:
+        print(f'Added recording: {episode_elem.attrib["grandparentTitle"]} - '
+              f'{episode_elem.attrib["parentIndex"]}x{episode_elem.attrib["index"]} - '
+              f'{episode_elem.attrib["title"]}')
+    else:
+        print(f'Plex post request failed: {p.status_code}.')
 
 
 def main():
