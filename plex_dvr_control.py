@@ -4,11 +4,25 @@ import sqlite3
 from difflib import SequenceMatcher
 from urllib import parse
 import settings
+import logging
+import os
 
 HOST_NAME = settings.server_settings['host']
 PORT = settings.server_settings['port']
 BASE_URL = f'http://{HOST_NAME}:{PORT}'
 PLEX_TOKEN = settings.server_settings['plex_token']
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+logger = logging.getLogger('plex-dvr-control')
+logger.setLevel(logging.INFO)
+fh = logging.FileHandler(f'{script_dir}/plex_dvr_control.log')
+ch = logging.StreamHandler()
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(ch)
 
 
 def update_db_from_plex():
@@ -107,13 +121,13 @@ def check_guide_for_missing_episodes():
                             cursor.execute('UPDATE episodes SET episode_gracenote_id=(?) WHERE id=(?)', (int(
                                 episode.attrib['guid'][-12:]), d['id']))
                             conn.commit()
-                            print('Updated gracenote id.')
-                        print(f'Skipped {episode.attrib["title"]}, {episode.attrib["grandparentTitle"]}'
-                              f' {episode.attrib["parentIndex"]}x{episode.attrib["index"]} - already in library')
+                            logger.info('Updated gracenote id.')
+                        logger.info(f'Skipped {episode.attrib["title"]}, {episode.attrib["grandparentTitle"]}'
+                                    f' {episode.attrib["parentIndex"]}x{episode.attrib["index"]} - already in library')
 
                     if episode.attrib['guid'] in guids:
-                        print(f'Skipped {episode.attrib["title"]}, {episode.attrib["grandparentTitle"]}'
-                              f' {episode.attrib["parentIndex"]}x{episode.attrib["index"]} - already scheduled')
+                        logger.info(f'Skipped {episode.attrib["title"]}, {episode.attrib["grandparentTitle"]}'
+                                    f' {episode.attrib["parentIndex"]}x{episode.attrib["index"]} - already scheduled')
 
 
 def set_recording(episode_elem, year):
@@ -176,11 +190,11 @@ def set_recording(episode_elem, year):
     url = f'{base_url}?{parameters}'
     p = requests.post(url)
     if p.ok:
-        print(f'Added recording: {episode_elem.attrib["grandparentTitle"]} - '
-              f'{episode_elem.attrib["parentIndex"]}x{episode_elem.attrib["index"]} - '
-              f'{episode_elem.attrib["title"]}')
+        logger.info(f'Added recording: {episode_elem.attrib["grandparentTitle"]} - '
+                    f'{episode_elem.attrib["parentIndex"]}x{episode_elem.attrib["index"]} - '
+                    f'{episode_elem.attrib["title"]}')
     else:
-        print(f'Plex post request failed: {p.status_code}.')
+        logger.info(f'Plex post request failed: {p.status_code}.')
 
 
 def main():
