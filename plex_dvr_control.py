@@ -35,7 +35,7 @@ def update_db_from_plex():
     # updates the database with latest Plex library information
 
     parameters = {'X-Plex-Token': PLEX_TOKEN}
-    conn = sqlite3.connect('tv_shows.db')
+    conn = sqlite3.connect(f'{script_dir}/tv_shows.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     all_shows = []
@@ -84,7 +84,7 @@ def check_guide_for_missing_episodes():
     guids = list()
     for sub in subscriptions_root.iter('Video'):
         guids.append(sub.attrib['guid'])
-    conn = sqlite3.connect('tv_shows.db')
+    conn = sqlite3.connect(f'{script_dir}/tv_shows.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     shows = list(cursor.execute('SELECT gracenote_id, id FROM shows'))
