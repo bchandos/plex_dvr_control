@@ -172,7 +172,7 @@ def set_recording(episode_elem, year):
         'params[mediaProviderID]': '3',
         'type': '4',
         'X-Plex-Product': 'Plex Web',
-        'X-Plex-Version': '3.59.1',
+        'X-Plex-Version': '3.77.4',
         'X-Plex-Client-Identifier': settings.server_settings['client_identifier'],
         'X-Plex-Platform': 'Chrome',
         'X-Plex-Platform-Version': '67.0',
