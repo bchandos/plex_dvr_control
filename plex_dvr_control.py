@@ -6,6 +6,7 @@ from urllib import parse
 import settings
 import logging
 import os
+import argparse
 
 HOST_NAME = settings.server_settings['host']
 PORT = settings.server_settings['port']
@@ -23,6 +24,15 @@ fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
+
+parser = argparse.ArgumentParser(
+    description='Utility to find missing episodes in Plex DVR and set recording.')
+parser.add_argument('plex_key', help='Plex ID of TV shows to search.')
+parser.add_argument('gracenote_id', help='Gracenote (TV Guide) show id.')
+parser.add_argument('show_title_search',
+                    help='Attempt to retrieve plex key and gracenote id by show title.')
+parser.add_argument('--match',
+                    help='Manually match an episode key with a gracenote id and store.')
 
 
 def update_db_from_plex():
