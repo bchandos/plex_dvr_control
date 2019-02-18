@@ -27,11 +27,11 @@ logger.addHandler(ch)
 
 parser = argparse.ArgumentParser(
     description='Utility to find missing episodes in Plex DVR and set recording.')
-parser.add_argument('plex_key', help='Plex ID of TV shows to search.')
-parser.add_argument('gracenote_id', help='Gracenote (TV Guide) show id.')
-parser.add_argument('show_title_search',
+parser.add_argument('--search', nargs=2,
+                    help='Search by Plex ID and Gracenote ID and add missing episodes to Plex DVR.')
+parser.add_argument('--show_title_search',
                     help='Attempt to retrieve plex key and gracenote id by show title.')
-parser.add_argument('--match',
+parser.add_argument('--force_match', nargs=2,
                     help='Manually match an episode key with a gracenote id and store.')
 
 
