@@ -21,16 +21,21 @@ class _PlexLibrary:
         self.parameters = {'X-Plex-Token': token}
         self.token = token
 
-    def all_shows(self, library_id):
+    def shows(self, library_id, search_title=None):
         """
-        Using the library ID, returns all shows available.
+        Using the library ID, returns all shows available. Takes optional search string.
         :param library_id: the Plex library ID
         :returns: all show attributes from a library
         :rtype: list
         """
+        if search_title:
+            p = self.parameters
+            p['title'] = search_title
+        else:
+            p = self.parameters
         all_shows = list()
         r = requests.get(
-            f'{self.base_url}/library/sections/{str(library_id)}/all', params=self.parameters)
+            f'{self.base_url}/library/sections/{str(library_id)}/all', params=p)
         shows_root = ET.fromstring(r.text)
         for show in shows_root:
             if 'type' in show.attrib and show.attrib['type'] == 'show':
@@ -157,10 +162,15 @@ class _PlexDVR:
                 sub_list.append(sub.attrib + directory.attrib)
         return sub_list
 
-    def shows(self):
+    def shows(self, search_title=None):
         # /tv.plex.providers.epg.onconnect:2/sections/2/all
+        if search_title:
+            p = self.parameters
+            p['title'] = search_title
+        else:
+            p = self.parameters
         r = requests.get(
-            f'{self.dvr_base_url}/sections/2/all', params=self.parameters)
+            f'{self.dvr_base_url}/sections/2/all', params=p)
         show_tree = ET.fromstring(r.text)
         show_list = list()
         for show in show_tree:
@@ -184,6 +194,7 @@ class _PlexDVR:
             if 'type' in season.attrib.keys() and season.attrib['type'] == 'season':
                 d = season.attrib
                 d['direct_url'] = f'{self.base_url}{season.attrib["key"]}/'
+                d['show_year'] = seasons_root.attrib['parentYear']
                 guide_show_seasons.append(d)
         return guide_show_seasons
 
@@ -203,7 +214,7 @@ class _PlexDVR:
         episodes_root = ET.fromstring(r.text)
         guide_season_episodes = list()
         for episode in episodes_root:
-            if 'type' in season.attrib.keys() and season.attrib['type'] == 'episode':
+            if 'type' in episode.attrib.keys() and episode.attrib['type'] == 'episode':
                 d = episode.attrib
                 d['direct_url'] = f'{self.base_url}{season.attrib["key"]}/'
                 d['media'] = list()
@@ -228,7 +239,7 @@ class _PlexDVR:
             pass
         else:
             raise ValueError(
-                'Provide either show id, season, and episode or episode id or episode url.')
+                'Provide either: show id, season, and episode *or* episode id *or* episode url.')
 
     def set_recording(self, episode, year):
         """

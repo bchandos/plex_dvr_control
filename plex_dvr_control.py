@@ -8,10 +8,13 @@ import logging
 import os
 import argparse
 
+from plex_api import PlexServer
+
 HOST_NAME = settings.server_settings['host']
 PORT = settings.server_settings['port']
 BASE_URL = f'http://{HOST_NAME}:{PORT}'
 PLEX_TOKEN = settings.server_settings['plex_token']
+CLIENT_ID = settings.server_settings['client_identifier']
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 logger = logging.getLogger('plex-dvr-control')
@@ -33,6 +36,59 @@ parser.add_argument('--show_title_search',
                     help='Attempt to retrieve plex key and gracenote id by show title.')
 parser.add_argument('--force_match', nargs=2,
                     help='Manually match an episode key with a gracenote id and store.')
+
+
+Plex = PlexServer(host=HOST_NAME, token=PLEX_TOKEN,
+                  client_identifier=CLIENT_ID)
+
+
+def search(plex_key, gracenote_id):
+    plib_seasons = Plex.library.seasons(show_key=plex_key)
+    dvr_seasons = Plex.dvr.seasons(gracenote_id)
+    plib_episodes = list()
+    dvr_episodes = list()
+    for s in plib_seasons:
+        plib_episodes.append(Plex.library.episodes(season_url=s['direct_url']))
+    for s in dvr_seasons:
+        dvr_episodes.append(Plex.dvr.episodes(season_url=s['direct_url']))
+    for dvr_ep in dvr_episodes:
+        for lib_ep in plib_episodes:
+            in_library = False
+            if SequenceMatcher(None, dvr_ep['title'], lib_ep['title']).ratio() > 0.90:
+                in_library = True
+            elif dvr_ep['parentIndex'] == int(lib_ep['parentIndex']) \
+                    and dvr_ep['index'] == int(lib_ep['index']) \
+                    and SequenceMatcher(None, dvr_ep['title'], lib_ep['title']).ratio() > 0.70:
+                in_library = True
+        if in_library:
+            pass
+        else:
+            Plex.dvr.set_recording(dvr_ep, dvr_seasons[0]['show_year'])
+
+
+
+
+def search_plex_by_title(show_title):
+    """
+    Search both the Plex television library and DVR guide listings for a show,
+    by title, and returns the keys, if found. Uses Plex native search.
+
+    :param show_title: the show title to search for
+    :type show_title: str
+    :returns: matches in Plex library and guide listings, if available
+    :rtype: str
+    """
+    if type(show_title) is str:
+        # don't hit the API if show_title is not valid
+        library_shows = Plex.library.shows(
+            library_id=3, search_title=show_title)
+        guide_shows = Plex.dvr.shows(search_title=show_title)
+        print('Library Listings')
+        for sh in library_shows:
+            print('\t%s - %s' % (sh['title'], sh['ratingKey']))
+        print('DVR Guide Listings')
+        for sh in guide_shows:
+            print('\t%s - %s' % (sh['title'], sh['guid'].split('/')[-1:][0]))
 
 
 def update_db_from_plex():
