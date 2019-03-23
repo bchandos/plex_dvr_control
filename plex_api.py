@@ -241,6 +241,17 @@ class _PlexDVR:
             raise ValueError(
                 'Provide either: show id, season, and episode *or* episode id *or* episode url.')
 
+    def current_recordings(self):
+        """
+        Returns a list of all episode guid currently on the recording schedule.
+        :returns: List of guid
+        :rtype: list
+        """
+        r = requests.get(
+            f'{self.base_url}/media/subscriptions', params=self.parameters)
+        subscriptions_root = ET.fromstring(r.text)
+        return [sub.attrib['guid'] for sub in subscriptions_root.iter('Video')]
+
     def set_recording(self, episode, year):
         """
         Prepares and sends the Plex POST request to add a recording to the Plex DVR.

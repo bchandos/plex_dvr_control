@@ -118,3 +118,4 @@ dmypy.json
 # app-specific
 settings.py
 tv_shows.db
+_*
