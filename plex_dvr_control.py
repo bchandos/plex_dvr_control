@@ -64,7 +64,28 @@ def main():
         '--set_client_id', nargs=1, help='Set the client identifier string in the settings file.', metavar='CLIENT-ID')
 
     args = parser.parse_args()
-    args_settings = parser_settings.parse_args()
+
+    if getattr(args, 'set_all', False):
+        if args.set_all:
+            key_order = ['host', 'port', 'plex_token', 'client_identifier']
+            for arg, k in zip(args.set_all, key_order):
+                settings.add_setting('server_settings', k, arg)
+        elif args.set_host or args.set_port or args.set_token or args.set_client_id:
+            if args.set_host:
+                settings.add_setting(
+                    'server_settings', 'host', args.set_host[0])
+            if args.set_port:
+                settings.add_setting(
+                    'server_settings', 'port', args.set_port[0])
+            if args.set_token:
+                settings.add_setting(
+                    'server_settings', 'plex_token', args.set_token[0])
+            if args.set_cliend_id:
+                settings.add_setting(
+                    'server_settings', 'client_identifier', args.set_client_id[0])
+        else:
+            parser_settings.print_help()
+
     if args.search:
         search(args.search[0], args.search[1])
     elif args.show_title_search:
@@ -77,23 +98,6 @@ def main():
         plex_id = args.force_unmatch[0]
         gracenote_id = args.force_unmatch[1]
         settings.add_setting('force_unmatches', plex_id, gracenote_id)
-    elif args_settings.set_all:
-        key_order = ['host', 'port', 'plex_token', 'client_identifier']
-        for arg, k in zip(args_settings.set_all, key_order):
-            settings.add_setting('server_settings', k, arg)
-    elif args_settings.set_host or args_settings.set_port or args_settings.set_token or args_settings.set_client_id:
-        if args_settings.set_host:
-            settings.add_setting(
-                'server_settings', 'host', args_settings.set_host[0])
-        if args_settings.set_port:
-            settings.add_setting(
-                'server_settings', 'port', args_settings.set_port[0])
-        if args_settings.set_token:
-            settings.add_setting(
-                'server_settings', 'plex_token', args_settings.set_token[0])
-        if args_settings.set_cliend_id:
-            settings.add_setting(
-                'server_settings', 'client_identifier', args_settings.set_client_id[0])
     else:
         parser.print_help()
 
@@ -153,11 +157,19 @@ def search_plex_by_title(show_title):
             library_id=3, search_title=show_title)
         guide_shows = Plex.dvr.shows(search_title=show_title)
         print('Library Listings')
+        print('----------------')
         for sh in library_shows:
             print('\t%s - %s' % (sh['title'], sh['ratingKey']))
+        if not library_shows:
+            print('\tNo results.')
+        print('\n')
         print('DVR Guide Listings')
+        print('------------------')
         for sh in guide_shows:
             print('\t%s - %s' % (sh['title'], sh['guid'].split('/')[-1:][0]))
+        if not guide_shows:
+            print('\tNo results.')
+        print('\n')
 
 
 def set_recording(episode_elem, year):
