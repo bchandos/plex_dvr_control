@@ -3,7 +3,8 @@ import xml.etree.ElementTree as ET
 import sqlite3
 from difflib import SequenceMatcher
 from urllib import parse
-import settings
+# import settings
+from json_settings import JSONSettings
 import logging
 import os
 import argparse
@@ -12,11 +13,13 @@ from plex_api import PlexServer
 
 # TODO: convert settings.py to another safe format
 
-HOST_NAME = settings.server_settings['host']
-PORT = settings.server_settings['port']
+settings = JSONSettings('settings.json')
+
+HOST_NAME = settings.get_setting('server_settings', 'host')
+PORT = settings.get_setting('server_settings', 'port')
 BASE_URL = f'http://{HOST_NAME}:{PORT}'
-PLEX_TOKEN = settings.server_settings['plex_token']
-CLIENT_ID = settings.server_settings['client_identifier']
+PLEX_TOKEN = settings.get_setting('server_settings', 'plex_token')
+CLIENT_ID = settings.get_setting('server_settings', 'client_identifier')
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 logger = logging.getLogger('plex-dvr-control')
@@ -69,16 +72,28 @@ def main():
     elif args.show_title_search:
         search_plex_by_title(args.show_title_search[0])
     elif args.force_match:
-        # TODO: implement
-        pass
+        plex_id = args.force_match[0]
+        gracenote_id = args.force_match[1]
+        settings.add_setting('force_matches', plex_id, gracenote_id)
     elif args.force_unmatch:
-        # TODO: implement
-        pass
+        plex_id = args.force_unmatch[0]
+        gracenote_id = args.force_unmatch[1]
+        settings.add_setting('force_unmatches', plex_id, gracenote_id)
     elif args.set_all:
-        # TODO: implement
-        pass
-    elif args.set_host:
-        pass
+        key_order = ['host', 'port', 'plex_token', 'client_identifier']
+        for arg, k in zip(args.set_all, key_order):
+            settings.add_setting('server_settings', k, arg)
+    elif args.set_host or args.set_port or args.set_token or args.set_client_id:
+        if args.set_host:
+            settings.add_setting('server_settings', 'host', args.set_host[0])
+        if args.set_port:
+            settings.add_setting('server_settings', 'port', args.set_port[0])
+        if args.set_token:
+            settings.add_setting(
+                'server_settings', 'plex_token', args.set_token[0])
+        if args.set_cliend_id:
+            settings.add_setting(
+                'server_settings', 'client_identifier', args.set_client_id[0])
 
 
 def search(plex_key, gracenote_id):
@@ -186,7 +201,7 @@ def set_recording(episode_elem, year):
         'type': '4',
         'X-Plex-Product': 'Plex Web',
         'X-Plex-Version': '3.77.4',
-        'X-Plex-Client-Identifier': settings.server_settings['client_identifier'],
+        'X-Plex-Client-Identifier': CLIENT_ID,
         'X-Plex-Platform': 'Chrome',
         'X-Plex-Platform-Version': '67.0',
         'X-Plex-Sync-Version': '2',

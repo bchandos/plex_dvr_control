@@ -116,6 +116,6 @@ dmypy.json
 .vscode/
 
 # app-specific
-settings.py
+settings.*
 tv_shows.db
 _*
