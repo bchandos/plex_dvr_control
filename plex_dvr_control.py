@@ -112,10 +112,18 @@ def search(plex_key, gracenote_id):
     for s in dvr_seasons:
         dvr_episodes.append(Plex.dvr.episodes(season_url=s['direct_url']))
     for dvr_ep in dvr_episodes:
+        dvr_ep_str = f'{dvr_ep["title"]} (S{dvr_ep["parentIndex"]}E{dvr_ep["index"]}, Gracenote ID: {gracenote_episode_id(dvr_ep["ratingKey"])})'
         for lib_ep in plib_episodes:
             in_library = False
-            dvr_ep_str = f'{dvr_ep["title"]} (S{dvr_ep["parentIndex"]}E{dvr_ep["index"]}, Gracenote ID: {gracenote_episode_id(dvr_ep["ratingKey"])})'
-            if SequenceMatcher(None, dvr_ep['title'], lib_ep['title']).ratio() > 0.90:
+            forced = False
+            if settings.get_setting('force_matches', lib_ep['ratingKey']) == dvr_ep['ratingKey']:
+                lib_ep_str = f'{lib_ep["title"]} (S{lib_ep["parentIndex"]}E{lib_ep["index"]}, Plex ID: {lib_ep["ratingKey"]})'
+                break
+            elif settings.get_setting('force_unmatches', lib_ep['ratingKey']) == dvr_ep['ratingKey']:
+                forced = True
+                lib_ep_str = f'{lib_ep["title"]} (S{lib_ep["parentIndex"]}E{lib_ep["index"]}, Plex ID: {lib_ep["ratingKey"]})'
+                break
+            elif SequenceMatcher(None, dvr_ep['title'], lib_ep['title']).ratio() > 0.90:
                 in_library = True
                 lib_ep_str = f'{lib_ep["title"]} (S{lib_ep["parentIndex"]}E{lib_ep["index"]}, Plex ID: {lib_ep["ratingKey"]})'
                 break
@@ -128,6 +136,9 @@ def search(plex_key, gracenote_id):
         if in_library:
             logger.info(
                 f'Guide episode {dvr_ep_str} matched with library episode {lib_ep_str}. Use --force-unmatch to correct matching errors.')
+        elif forced:
+            logger.info(
+                f'Guide episode {dvr_ep_str} force unmatched with library episode {lib_ep_str}.')
         elif dvr_ep['guid'] in Plex.dvr.current_recordings():
             logger.info(
                 f'Guide episode {dvr_ep_str} already in recording schedule. Skipping.')

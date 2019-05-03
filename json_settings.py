@@ -28,4 +28,7 @@ class JSONSettings():
         self.write_settings()
 
     def get_setting(self, category, setting_name):
-        return self.settings[category][setting_name]
+        try:
+            return self.settings[category][setting_name]
+        except KeyError:
+            return None
