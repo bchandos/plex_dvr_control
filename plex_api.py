@@ -179,12 +179,12 @@ class _PlexDVR:
 
     def seasons(self, show_gracenote_id=None, show_url=None):
         if show_url:
-            r = requests.get(show_url)
+            r = requests.get(show_url, params=self.parameters)
         elif show_gracenote_id:
             show_encoded_url = parse.quote(
                 f'com.gracenote.onconnect://show/{show_gracenote_id}', safe='').replace('.', '%2E')
             r = requests.get(
-                f'{self.dvr_base_url}/metadata/{show_encoded_url}/children')
+                f'{self.dvr_base_url}/metadata/{show_encoded_url}/children', params=self.parameters)
         else:
             raise ValueError(
                 'If not providing show URL, must provide Gracenote ID.')
@@ -202,12 +202,12 @@ class _PlexDVR:
         # com.gracenote.onconnect://season/{show_gracenote_id}/{season}
         # /tv.plex.providers.epg.onconnect:2/metadata/com%2Egracenote%2Eonconnect%3A%2F%2Fseason%2F184483%2F6/children
         if season_url:
-            r = requests.get(season_url)
+            r = requests.get(season_url, params=self.parameters)
         elif show_gracenote_id and season:
             season_encoded_url = parse.quote(
                 f'com.gracenote.onconnect://season/{show_gracenote_id}/{season}', safe='').replace('.', '%2E')
             r = requests.get(
-                f'{self.dvr_base_url}/metadata/{season_encoded_url}/children')
+                f'{self.dvr_base_url}/metadata/{season_encoded_url}/children', params=self.parameters)
         else:
             raise ValueError(
                 'If not providing season URL, must provide Gracenote ID and season.')
@@ -216,7 +216,7 @@ class _PlexDVR:
         for episode in episodes_root:
             if 'type' in episode.attrib.keys() and episode.attrib['type'] == 'episode':
                 d = episode.attrib
-                d['direct_url'] = f'{self.base_url}{season.attrib["key"]}/'
+                d['direct_url'] = f'{self.base_url}{episode.attrib["key"]}/'
                 d['media'] = list()
                 for media in episode:
                     d['media'].append(media.attrib)

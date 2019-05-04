@@ -40,6 +40,9 @@ def main():
     parser.add_argument('--search', nargs=2,
                         help='Search by Plex ID and Gracenote ID and add missing episodes to Plex DVR.',
                         metavar=('PLEX-ID', 'GRACENOTE-ID'))
+    parser.add_argument('--search_safe', nargs=2,
+                        help='Search by Plex ID and Gracenote ID and list missing episodes.',
+                        metavar=('PLEX-ID', 'GRACENOTE-ID'))
     parser.add_argument('--show_title_search', nargs=1,
                         help='Attempt to retrieve plex key and gracenote id by show title.',
                         metavar='TITLE')
@@ -88,6 +91,8 @@ def main():
 
     if args.search:
         search(args.search[0], args.search[1])
+    elif args.search_safe:
+        search(args.search_safe[0], args.search_safe[1], safe=True)
     elif args.show_title_search:
         search_plex_by_title(args.show_title_search[0])
     elif args.force_match:
@@ -102,15 +107,15 @@ def main():
         parser.print_help()
 
 
-def search(plex_key, gracenote_id):
+def search(plex_key, gracenote_id, safe=False):
     plib_seasons = Plex.library.seasons(show_key=plex_key)
     dvr_seasons = Plex.dvr.seasons(gracenote_id)
     plib_episodes = list()
     dvr_episodes = list()
     for s in plib_seasons:
-        plib_episodes.append(Plex.library.episodes(season_url=s['direct_url']))
+        plib_episodes.extend(Plex.library.episodes(season_url=s['direct_url']))
     for s in dvr_seasons:
-        dvr_episodes.append(Plex.dvr.episodes(season_url=s['direct_url']))
+        dvr_episodes.extend(Plex.dvr.episodes(season_url=s['direct_url']))
     for dvr_ep in dvr_episodes:
         dvr_ep_str = f'{dvr_ep["title"]} (S{dvr_ep["parentIndex"]}E{dvr_ep["index"]}, Gracenote ID: {gracenote_episode_id(dvr_ep["ratingKey"])})'
         for lib_ep in plib_episodes:
@@ -127,8 +132,8 @@ def search(plex_key, gracenote_id):
                 in_library = True
                 lib_ep_str = f'{lib_ep["title"]} (S{lib_ep["parentIndex"]}E{lib_ep["index"]}, Plex ID: {lib_ep["ratingKey"]})'
                 break
-            elif dvr_ep['parentIndex'] == int(lib_ep['parentIndex']) \
-                    and dvr_ep['index'] == int(lib_ep['index']) \
+            elif int(dvr_ep['parentIndex']) == int(lib_ep['parentIndex']) \
+                    and int(dvr_ep['index']) == int(lib_ep['index']) \
                     and SequenceMatcher(None, dvr_ep['title'], lib_ep['title']).ratio() > 0.70:
                 in_library = True
                 lib_ep_str = f'{lib_ep["title"]} (S{lib_ep["parentIndex"]}E{lib_ep["index"]}, Plex ID: {lib_ep["ratingKey"]})'
@@ -142,6 +147,10 @@ def search(plex_key, gracenote_id):
         elif dvr_ep['guid'] in Plex.dvr.current_recordings():
             logger.info(
                 f'Guide episode {dvr_ep_str} already in recording schedule. Skipping.')
+        elif safe:
+
+            logger.info(
+                f'Guide episode {dvr_ep_str} not found in library (not added, safe mode). Use --force-match to correct missing matches.')
         else:
             Plex.dvr.set_recording(dvr_ep, dvr_seasons[0]['show_year'])
             logger.info(
