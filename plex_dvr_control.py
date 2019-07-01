@@ -10,7 +10,7 @@ import argparse
 
 from plex_api import PlexServer
 
-settings = JSONSettings('settings.json')
+settings = JSONSettings('settings.json', 'settings-example.json')
 
 HOST_NAME = settings.get_setting('server_settings', 'host')
 PORT = settings.get_setting('server_settings', 'port')
@@ -148,7 +148,6 @@ def search(plex_key, gracenote_id, safe=False):
             logger.info(
                 f'Guide episode {dvr_ep_str} already in recording schedule. Skipping.')
         elif safe:
-
             logger.info(
                 f'Guide episode {dvr_ep_str} not found in library (not added, safe mode). Use --force-match to correct missing matches.')
         else:
