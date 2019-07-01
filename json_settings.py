@@ -1,10 +1,16 @@
 import json
+import pathlib
 
 
 class JSONSettings():
-    def __init__(self, settings_file):
+    def __init__(self, settings_file, settings_template=None):
         self.settings_file = settings_file
-        self.get_settings(self.settings_file)
+        settings_path = pathlib.Path(self.settings_file)
+        if settings_path.exists():
+            self.get_settings(self.settings_file)
+        elif settings_template and pathlib.Path(settings_template).exists():
+            self.get_settings(settings_template)
+            self.write_settings()
 
     def get_settings(self, settings_file):
         with open(settings_file) as json_settings_file:
