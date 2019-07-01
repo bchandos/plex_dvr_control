@@ -286,7 +286,7 @@ class _PlexDVR:
             'hints[title]': episode['title'],
             'hints[type]': '4',
             'hints[year]': episode['year'],
-            'params[airingChannels]': parse.quote(episode[0]['channelIdentifier']+'='+episode[0]['channelTitle']),
+            'params[airingChannels]': parse.quote(episode['media'][0]['channelIdentifier']+'='+episode['media'][0]['channelTitle']),
             'params[airingTimes]': int(
                 ((int(episode['originallyAvailableAt'][11:13]) + 8) +
                  int(episode['originallyAvailableAt'][14:16]) / 60) * 60) % 1440,
